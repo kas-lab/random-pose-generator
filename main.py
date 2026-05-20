@@ -29,8 +29,6 @@ import sys
 
 import yaml
 
-from rct_collector.orchestrator import OrchestratorConfig, RCTOrchestrator
-
 
 def setup_logging(log_level: str = "INFO", log_file: str = None):
     handlers = [logging.StreamHandler(sys.stdout)]
@@ -89,7 +87,7 @@ def main():
             logger.error("--map required for --visualize-only / --generate-poses")
             sys.exit(1)
 
-        from rct_collector.pose_sampler import PoseSampler
+        from pose_sampler import PoseSampler
 
         sampler = PoseSampler(
             map_yaml_path=args.map,
@@ -128,37 +126,15 @@ def main():
             logger.info(f"Saved visualization to {vis_path}")
             return
 
-    # ── Online mode (ROS required) ───────────────────────────────────
-
-    # Build config
-    if args.config:
-        with open(args.config) as f:
-            config = OrchestratorConfig(**yaml.safe_load(f))
-    else:
-        config = OrchestratorConfig(
-            num_trials=args.trials,
-            trial_timeout_sec=args.timeout,
-            cooldown_sec=args.cooldown,
-            map_yaml_path=args.map or "",
-            obstacle_clearance_m=args.clearance,
-            min_goal_distance=args.min_distance,
-            max_goal_distance=args.max_distance,
-            output_dir=args.output,
-            scan_topic=args.scan_topic,
-            odom_topic=args.odom_topic,
-            gazebo_robot_model=args.robot_model,
-            collision_threshold=args.collision_threshold,
-            collect_risk_features=args.collect_risk,
-            presampled_poses_path=args.presampled_poses,
-        )
+ 
 
     if not config.map_yaml_path and not args.resume:
         logger.error("--map required (or use --resume)")
         sys.exit(1)
 
-    orchestrator = RCTOrchestrator(config)
-    orchestrator.initialize()
-    orchestrator.run()
+    #orchestrator = RCTOrchestrator(config)
+    #orchestrator.initialize()
+    #orchestrator.run()
 
 
 if __name__ == "__main__":
