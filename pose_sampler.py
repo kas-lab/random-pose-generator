@@ -51,6 +51,7 @@ class PoseSampler:
         max_goal_distance: float = 15.0,
         sampling_bounds: Optional[dict] = None,
         seed: int | None = None,
+        initial_pose: list = [],
     ):
         self.map_yaml_path = Path(map_yaml_path)
         self.obstacle_clearance_m = obstacle_clearance_m
@@ -58,6 +59,8 @@ class PoseSampler:
         self.max_goal_distance = max_goal_distance
         self.sampling_bounds = sampling_bounds
         self.rng = np.random.default_rng(seed)
+        self.initial_pose = eval(initial_pose)
+        self.sequence = False
 
         # Loaded at load_map() time
         self.map_image: Optional[np.ndarray] = None
@@ -66,6 +69,8 @@ class PoseSampler:
         self.origin_y: float = 0.0
         self.valid_mask: Optional[np.ndarray] = None
         self.valid_indices: Optional[np.ndarray] = None
+        
+
 
     def load_map(self):
         """Load map from YAML + image file and precompute valid sampling mask."""
@@ -166,7 +171,7 @@ class PoseSampler:
         return row, col
 
     def sample_start_goal(
-        self, max_attempts: int = 1000
+        self, max_attempts: int = 1000, first=False
     ) -> tuple[dict, dict]:
         """
         Sample a valid (start, goal) pose pair.
@@ -179,9 +184,13 @@ class PoseSampler:
         """
         for attempt in range(max_attempts):
             # Sample start pose
-            start_idx = self.rng.integers(len(self.valid_indices))
-            start_row, start_col = self.valid_indices[start_idx]
-            start_x, start_y = self._pixel_to_world(start_row, start_col)
+            if(self.initial_pose == [] or not first):
+                start_idx = self.rng.integers(len(self.valid_indices))
+                start_row, start_col = self.valid_indices[start_idx]
+                start_x, start_y = self._pixel_to_world(start_row, start_col)
+            else:
+                # TODO: ensure length of initial pose, throw error otherwise
+                start_x, start_y = self.initial_pose
 
             # Sample goal pose with distance constraint
             goal_idx = self.rng.integers(len(self.valid_indices))
@@ -226,7 +235,10 @@ class PoseSampler:
 
         poses = []
         for i in range(n_poses):
-            start, goal = self.sample_start_goal()
+            if(i == 0):
+                start, goal = self.sample_start_goal(first=True)
+            else:    
+                start, goal = self.sample_start_goal()
             dist = np.sqrt((goal["x"] - start["x"]) ** 2 + (goal["y"] - start["y"]) ** 2)
             poses.append({
                 "id": i,

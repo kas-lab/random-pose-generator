@@ -69,6 +69,7 @@ def parse_args():
     p.add_argument("--collision-threshold", type=float, default=0.15)
     p.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
     p.add_argument("--seed", type=int, default=None)
+    p.add_argument("--initial-pose", type=str, default='[]')
     return p.parse_args()
 
 
@@ -95,6 +96,7 @@ def main():
             min_goal_distance=args.min_distance,
             max_goal_distance=args.max_distance,
             seed=args.seed,
+            initial_pose=args.initial_pose,
         )
         sampler.load_map()
         os.makedirs(args.output, exist_ok=True)
