@@ -26,7 +26,7 @@ import argparse
 import logging
 import os
 import sys
-
+from ament_index_python.packages import get_package_share_directory
 import yaml
 
 
@@ -45,7 +45,8 @@ def setup_logging(log_level: str = "INFO", log_file: str = None):
 
 def parse_args():
     p = argparse.ArgumentParser(description="RCT Data Collector for Nav2")
-    p.add_argument("--map", type=str, help="Path to map YAML file")
+    p.add_argument("--map-absolute-path", type=str, help="Path to map YAML file")
+    p.add_argument("--map-ros-path", type=str, help="Path within share directory of given package")
     p.add_argument("--trials", type=int, default=3000)
     p.add_argument("--output", type=str, default="./rct_data")
     p.add_argument("--timeout", type=float, default=180.0)
@@ -69,7 +70,9 @@ def parse_args():
     p.add_argument("--collision-threshold", type=float, default=0.15)
     p.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
     p.add_argument("--seed", type=int, default=None)
-    p.add_argument("--initial-pose", type=str, default='[]')
+    p.add_argument("--initial-pose", nargs=2, type=float, default=[])
+    p.add_argument("--sequence", type=bool, default=False)
+
     return p.parse_args()
 
 
@@ -84,19 +87,28 @@ def main():
     # ── Offline modes (no ROS needed) ────────────────────────────────
 
     if is_offline_mode:
-        if not args.map:
-            logger.error("--map required for --visualize-only / --generate-poses")
+        if not (args.map_absolute_path or args.map_ros_path):
+            logger.error("--map-absolute-path or --map-ros-path required for --visualize-only / --generate-poses")
             sys.exit(1)
+        if args.map_absolute_path and args.map_ros_path:
+            logger.error("Provide either --map-absolute-path or --map-ros-path not both")
+            sys.exit(1)
+        if (args.map_ros_path):
+            pkg_path = get_package_share_directory(args.map_ros_path.split(os.path.sep)[0])
+            path = os.path.join(pkg_path, *args.map_ros_path.split(os.path.sep)[1:])
+        else:
+            path = args.map_absolute_path
 
         from pose_sampler import PoseSampler
-
+        print(args.initial_pose)
         sampler = PoseSampler(
-            map_yaml_path=args.map,
+            map_yaml_path=path,
             obstacle_clearance_m=args.clearance,
             min_goal_distance=args.min_distance,
             max_goal_distance=args.max_distance,
             seed=args.seed,
             initial_pose=args.initial_pose,
+            sequence=args.sequence
         )
         sampler.load_map()
         os.makedirs(args.output, exist_ok=True)
