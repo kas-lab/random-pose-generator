@@ -216,6 +216,7 @@ class PoseSampler:
         self,
         n_poses: int,
         output_path: str = "presampled_poses.json",
+        save = True
     ) -> list[dict]:
         """
         Pre-generate n pose pairs and save them to a JSON file.
@@ -250,10 +251,11 @@ class PoseSampler:
                 "distance": round(dist, 3),
             })
 
-        with open(output_path, "w") as f:
-            json.dump(poses, f, indent=2)
+        if (save):
+            with open(output_path, "w") as f:
+                json.dump(poses, f, indent=2)
 
-        logger.info(f"Saved {len(poses)} pose pairs to {output_path}")
+            logger.info(f"Saved {len(poses)} pose pairs to {output_path}")
 
         # Print summary stats
         distances = [p["distance"] for p in poses]
