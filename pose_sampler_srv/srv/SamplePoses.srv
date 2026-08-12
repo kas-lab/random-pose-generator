@@ -1,0 +1,5 @@
+int64 number
+float32 clearance
+geometry_msgs/Pose initial_pose
+---
+geometry_msgs/Pose[] poses
